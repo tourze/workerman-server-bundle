@@ -1,2 +1,3 @@
-# workerman-server-bundle
-Run symfony on workerman
+# Symfony + Workerman
+
+Make symfony application faster, with less (or none) change.
