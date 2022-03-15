@@ -4,7 +4,9 @@ namespace WorkermanServerBundle\Command;
 
 use App\Kernel;
 use Doctrine\DBAL\Connection;
+use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use Nyholm\Psr7\Factory\Psr17Factory;
+use Nyholm\Psr7\Response;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\Console\Command\Command;
@@ -80,7 +82,23 @@ class WorkermanHttpCommand extends Command
             $this->fileMonitorTimer();
             $this->resetServiceTimer($output);
         };
-        $worker->onMessage = function (TcpConnection $connection, ServerRequest $psrRequest) use ($output) {
+
+        $detector = new FinfoMimeTypeDetector();
+        $worker->onMessage = function (TcpConnection $connection, ServerRequest $psrRequest) use ($output, $detector) {
+            $checkFile = "{$this->kernel->getProjectDir()}/public{$psrRequest->getUri()->getPath()}";
+            $checkFile = str_replace('..', '/', $checkFile);
+            //$output->writeln("正在处理：{$checkFile}");
+
+            if (is_file($checkFile)) {
+                $code = file_get_contents($checkFile);
+                $psrResponse = new Response(200, [
+                    'Content-Type' => $detector->detectMimeType($checkFile, $code),
+                    'Last-Modified' => gmdate('D, d M Y H:i:s', filemtime($checkFile)) . ' GMT',
+                ], $code);
+                $connection->send(response_to_string($psrResponse), true);
+                return;
+            }
+
             $this->kernel->boot();
 
             // 将PSR规范的请求，转换为Symfony请求进行处理，最终再转换成PSR响应进行返回

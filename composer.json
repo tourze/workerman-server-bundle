@@ -4,8 +4,10 @@
   "type": "symfony-bundle",
   "require": {
     "php": ">=7.2",
+    "ext-fileinfo": "*",
     "ext-posix": "*",
     "ext-pcntl": "*",
+    "league/mime-type-detection": "^1.9",
     "nyholm/psr7": "^1.5",
     "symfony/framework-bundle": "^5.4",
     "symfony/psr-http-message-bridge": "^2.1",
