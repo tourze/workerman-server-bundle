@@ -1,9 +1,7 @@
 <?php
 
-namespace WorkermanServerBundle\Command;
+namespace Tourze\WorkermanServerBundle\Command;
 
-use App\Kernel;
-use Doctrine\DBAL\Connection;
 use League\MimeTypeDetection\FinfoMimeTypeDetector;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
@@ -13,11 +11,9 @@ use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
-use Throwable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Psr7\ServerRequest;
-use Workerman\Timer;
 use Workerman\Worker;
 use function Workerman\Psr7\response_to_string;
 
@@ -27,28 +23,17 @@ class WorkermanHttpCommand extends Command
 
     protected static $defaultName = 'workerman:http';
 
-    /**
-     * @var KernelInterface
-     */
-    private $kernel;
+    private KernelInterface $kernel;
 
-    /**
-     * @var Connection
-     */
-    private $dbConnection;
+    protected HttpFoundationFactory $httpFoundationFactory;
 
-    protected $httpFoundationFactory;
+    protected PsrHttpFactory $psrHttpFactory;
 
-    protected $psrHttpFactory;
-
-    public function __construct(
-        Connection $dbConnection,
-        string     $name = null
-    )
+    public function __construct()
     {
-        parent::__construct($name);
-        $this->kernel = new Kernel($_ENV['APP_ENV'], (bool)$_ENV['APP_DEBUG']);
-        $this->dbConnection = $dbConnection;
+        parent::__construct();
+        //$this->kernel = new Kernel($_ENV['APP_ENV'], (bool)$_ENV['APP_DEBUG']);
+        //$this->dbConnection = $dbConnection;
 
         $this->httpFoundationFactory = new HttpFoundationFactory();
         $psr17Factory = new Psr17Factory();
@@ -131,13 +116,13 @@ class WorkermanHttpCommand extends Command
     public function resetServiceTimer(OutputInterface $output)
     {
         // 定时连接mysql并执行一个命令，进行保活
-        Timer::add(20, function () use ($output) {
-            try {
-                $this->dbConnection->executeQuery('SELECT 1');
-            } catch (Throwable $e) {
-                $output->writeln("dbal链接保活时发生错误：" . $e);
-            }
-        });
+//        Timer::add(20, function () use ($output) {
+//            try {
+//                $this->dbConnection->executeQuery('SELECT 1');
+//            } catch (Throwable $e) {
+//                $output->writeln("dbal链接保活时发生错误：" . $e);
+//            }
+//        });
         // TODO 其实更加好的方法，是遍历所有服务，然后看哪个服务是支持reset的，直接reset
     }
 

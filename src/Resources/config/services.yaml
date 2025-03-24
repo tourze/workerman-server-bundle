@@ -1,9 +1,9 @@
 services:
   workerman-server.command.http:
-    class: WorkermanServerBundle\Command\WorkermanHttpCommand
+    class: Tourze\WorkermanServerBundle\Command\WorkermanHttpCommand
     autowire: true
     tags: [ 'console.command' ]
   workerman-server.command.ws:
-    class: WorkermanServerBundle\Command\WorkermanWsCommand
+    class: Tourze\WorkermanServerBundle\Command\WorkermanWsCommand
     autowire: true
     tags: [ 'console.command' ]

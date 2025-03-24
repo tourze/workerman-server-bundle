@@ -1,9 +1,7 @@
 <?php
 
-namespace WorkermanServerBundle\Command;
+namespace Tourze\WorkermanServerBundle\Command;
 
-use App\Kernel;
-use Doctrine\DBAL\Connection;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
@@ -18,22 +16,16 @@ class WorkermanWsCommand extends Command
 
     protected static $defaultName = 'workerman:ws';
 
-    /**
-     * @var KernelInterface
-     */
-    private $kernel;
+    private KernelInterface $kernel;
 
-    protected $httpFoundationFactory;
+    protected HttpFoundationFactory $httpFoundationFactory;
 
-    protected $psrHttpFactory;
+    protected PsrHttpFactory $psrHttpFactory;
 
-    public function __construct(
-        Connection $dbConnection,
-        string     $name = null
-    )
+    public function __construct()
     {
-        parent::__construct($name);
-        $this->kernel = new Kernel($_ENV['APP_ENV'], (bool)$_ENV['APP_DEBUG']);
+        parent::__construct();
+        //$this->kernel = new Kernel($_ENV['APP_ENV'], (bool)$_ENV['APP_DEBUG']);
 
         $this->httpFoundationFactory = new HttpFoundationFactory();
         $psr17Factory = new Psr17Factory();

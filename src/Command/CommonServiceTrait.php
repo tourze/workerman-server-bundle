@@ -1,6 +1,6 @@
 <?php
 
-namespace WorkermanServerBundle\Command;
+namespace Tourze\WorkermanServerBundle\Command;
 
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;

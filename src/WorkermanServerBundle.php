@@ -1,6 +1,6 @@
 <?php
 
-namespace WorkermanServerBundle;
+namespace Tourze\WorkermanServerBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 
