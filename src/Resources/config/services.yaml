@@ -3,7 +3,5 @@ services:
     class: Tourze\WorkermanServerBundle\Command\WorkermanHttpCommand
     autowire: true
     tags: [ 'console.command' ]
-  workerman-server.command.ws:
-    class: Tourze\WorkermanServerBundle\Command\WorkermanWsCommand
-    autowire: true
-    tags: [ 'console.command' ]
+  workerman-server.mime-detector:
+    class: League\MimeTypeDetection\FinfoMimeTypeDetector
