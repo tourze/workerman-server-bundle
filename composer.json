@@ -20,5 +20,11 @@
     "psr-4": {
       "Tourze\\WorkermanServerBundle\\": "src"
     }
+  },
+  "require-dev": {
+    "phpstan/phpstan": "^2.1"
+  },
+  "scripts": {
+    "phpstan": "phpstan analyse src -l 1"
   }
 }
