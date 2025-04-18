@@ -15,8 +15,10 @@
     "symfony/psr-http-message-bridge": "^6.4",
     "tourze/workerman-file-monitor": "0.0.*",
     "tourze/workerman-process-worker": "0.0.*",
+    "tourze/symfony-runtime-context-bundle": "0.0.*",
     "workerman/psr7": "^2.0",
-    "workerman/workerman": "^5.1"
+    "workerman/workerman": "^5.1",
+    "workerman/coroutine": "^1.1"
   },
   "autoload": {
     "psr-4": {
