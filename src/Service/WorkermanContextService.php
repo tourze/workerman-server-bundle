@@ -41,4 +41,9 @@ class WorkermanContextService implements ContextServiceInterface
         }
         return Coroutine::isCoroutine();
     }
+
+    public function reset(): void
+    {
+        $this->inner->reset();
+    }
 }
