@@ -25,8 +25,14 @@
       "Tourze\\WorkermanServerBundle\\": "src"
     }
   },
+  "autoload-dev": {
+    "psr-4": {
+      "Tourze\\WorkermanServerBundle\\Tests\\": "tests"
+    }
+  },
   "require-dev": {
-    "phpstan/phpstan": "^2.1"
+    "phpstan/phpstan": "^2.1",
+    "phpunit/phpunit": "^10.0"
   },
   "scripts": {
     "phpstan": "phpstan analyse src -l 1"
