@@ -32,5 +32,5 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Run PHPStan
-        run: ./vendor/bin/composer-require-checker check composer.json
+      - name: Run
+        run: XDEBUG_MODE=off ./vendor/bin/composer-require-checker check composer.json
