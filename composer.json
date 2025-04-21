@@ -13,15 +13,18 @@
     "symfony/config": "^6.4",
     "symfony/console": "^6.4",
     "symfony/dependency-injection": "^6.4",
+    "symfony/http-foundation": "^6.4",
     "symfony/http-kernel": "^6.4",
     "symfony/framework-bundle": "^6.4",
     "symfony/psr-http-message-bridge": "^6.4",
     "tourze/workerman-file-monitor": "0.0.*",
     "tourze/workerman-process-worker": "0.0.*",
     "tourze/symfony-runtime-context-bundle": "0.0.*",
+    "tourze/backtrace-helper": "~0.0.5",
     "workerman/psr7": "^2.0",
     "workerman/workerman": "^5.1",
     "workerman/coroutine": "^1.1",
+    "psr/http-message": "^1.1 || ^2.0",
     "psr/http-server-handler": "^1.0"
   },
   "autoload": {

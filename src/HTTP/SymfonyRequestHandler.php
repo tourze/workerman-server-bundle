@@ -16,7 +16,6 @@ use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
 use Tourze\BacktraceHelper\ExceptionPrinter;
 use Tourze\Symfony\RuntimeContextBundle\Service\ContextServiceInterface;
-use function Tourze\Workerman\SymfonyRequestHandler\meminfo_dump;
 
 /**
  * 统一的HTTP请求处理
@@ -99,16 +98,16 @@ class SymfonyRequestHandler implements RequestHandlerInterface
             $authorizationHeader = $request->getHeaderLine('Authorization');
             if ($authorizationHeader) {
                 // copy from vendor/symfony/http-foundation/ServerBag.php
-                if (0 === mb_stripos($authorizationHeader, 'basic ')) {
+                if (0 === stripos($authorizationHeader, 'basic ')) {
                     // Decode AUTHORIZATION header into PHP_AUTH_USER and PHP_AUTH_PW when authorization header is basic
-                    $exploded = explode(':', base64_decode(mb_substr($authorizationHeader, 6)), 2);
+                    $exploded = explode(':', base64_decode(substr($authorizationHeader, 6)), 2);
                     if (2 == \count($exploded)) {
                         [$appendHeaders['PHP_AUTH_USER'], $appendHeaders['PHP_AUTH_PW']] = $exploded;
                     }
-                } elseif (empty($this->parameters['PHP_AUTH_DIGEST']) && (0 === mb_stripos($authorizationHeader, 'digest '))) {
+                } elseif (empty($this->parameters['PHP_AUTH_DIGEST']) && (0 === stripos($authorizationHeader, 'digest '))) {
                     // In some circumstances PHP_AUTH_DIGEST needs to be set
                     $appendHeaders['PHP_AUTH_DIGEST'] = $authorizationHeader;
-                } elseif (0 === mb_stripos($authorizationHeader, 'bearer ')) {
+                } elseif (0 === stripos($authorizationHeader, 'bearer ')) {
                     /*
                      * XXX: Since there is no PHP_AUTH_BEARER in PHP predefined variables,
                      *      I'll just set $headers['AUTHORIZATION'] here.
