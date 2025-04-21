@@ -21,7 +21,8 @@
     "tourze/symfony-runtime-context-bundle": "0.0.*",
     "workerman/psr7": "^2.0",
     "workerman/workerman": "^5.1",
-    "workerman/coroutine": "^1.1"
+    "workerman/coroutine": "^1.1",
+    "psr/http-server-handler": "^1.0"
   },
   "autoload": {
     "psr-4": {
