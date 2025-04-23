@@ -7,11 +7,13 @@ use Nyholm\Psr7\Factory\Psr17Factory;
 use Nyholm\Psr7\Response;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
+use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Tourze\Workerman\FileMonitor\FileMonitorWorker;
 use Tourze\Workerman\ProcessWorker\ProcessWorker;
@@ -21,8 +23,13 @@ use Workerman\Psr7\ServerRequest;
 use Workerman\Worker;
 use function Workerman\Psr7\response_to_string;
 
+#[AsCommand(
+    name: 'workerman:http',
+    description: '启动Workerman-HTTP服务'
+)]
 class WorkermanHttpCommand extends Command
 {
+    // 保留静态属性以保持向后兼容
     protected static $defaultName = 'workerman:http';
 
     protected HttpFoundationFactory $httpFoundationFactory;
@@ -48,7 +55,6 @@ class WorkermanHttpCommand extends Command
     protected function configure(): void
     {
         $this
-            ->setDescription('启动Workerman-HTTP服务')
             ->addArgument('start')
             ->addArgument('stop')
             ->addArgument('restart')
@@ -95,7 +101,9 @@ class WorkermanHttpCommand extends Command
             $this->sendResponse($psrRequest, $connection, response_to_string($psrResponse));
 
             // 这里做最终的环境变量收集和处理
-            $this->kernel->terminate($symfonyRequest, $symfonyResponse);
+            if ($this->kernel instanceof TerminableInterface) {
+                $this->kernel->terminate($symfonyRequest, $symfonyResponse);
+            }
 
             //设置单进程请求量达到额定时重启，防止代码写得不好产生OOM
             static $maxRequest;
