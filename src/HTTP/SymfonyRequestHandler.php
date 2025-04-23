@@ -138,10 +138,10 @@ class SymfonyRequestHandler implements RequestHandlerInterface
         try {
             $sfResponse = $this->kernel->handle($sfRequest);
         } catch (\Throwable $exception) {
-            $this->logger?->error('执行请求时发生未被捕捉的异常', [
-                'exception' => $exception,
-            ]);
             $fe = ExceptionPrinter::exception($exception);
+            $this->logger?->error('执行请求时发生未被捕捉的异常', [
+                'exception' => $fe,
+            ]);
             $sfResponse = new \Symfony\Component\HttpFoundation\Response($fe);
         }
 
