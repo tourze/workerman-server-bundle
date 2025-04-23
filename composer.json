@@ -18,6 +18,7 @@
     "symfony/framework-bundle": "^6.4",
     "symfony/psr-http-message-bridge": "^6.4",
     "symfony/yaml": "^6.4 || ^7.1",
+    "symfony/service-contracts": "^3.5",
     "tourze/workerman-file-monitor": "0.0.*",
     "tourze/workerman-process-worker": "0.0.*",
     "tourze/symfony-runtime-context-bundle": "0.0.*",
