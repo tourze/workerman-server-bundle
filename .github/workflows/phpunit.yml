@@ -1,0 +1,24 @@
+name: PHPUnit Test
+on: [push, pull_request]
+
+jobs:
+  phpunit:
+    name: PHP-${{ matrix.php_version }}-${{ matrix.perfer }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php_version:
+          - 8.1
+          - 8.2
+          - 8.3
+          - 8.4
+        perfer:
+          - stable
+          - lowest
+    steps:
+      - uses: actions/checkout@master
+      - name: Install Dependencies
+        run: composer update --prefer-dist --no-interaction --no-suggest --prefer-${{ matrix.perfer }}
+      - name: Run PHPUnit
+        run: ./vendor/bin/phpunit tests
