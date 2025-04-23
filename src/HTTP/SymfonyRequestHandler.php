@@ -160,9 +160,9 @@ class SymfonyRequestHandler implements RequestHandlerInterface
                 $openMeminfo = 'true' === $sfRequest->query->get('__meminfo');
                 // 注销请求和响应对象
                 unset($sfRequest);
-                if ($openMeminfo && function_exists('meminfo_dump')) {
-                    meminfo_dump(fopen($this->kernel->getProjectDir() . '/var/php_mem_dump_' . time() . '.json', 'w'));
-                }
+//                if ($openMeminfo && function_exists('meminfo_dump')) {
+//                    meminfo_dump(fopen($this->kernel->getProjectDir() . '/var/php_mem_dump_' . time() . '.json', 'w'));
+//                }
             });
         }
 
