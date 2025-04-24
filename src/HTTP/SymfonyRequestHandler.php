@@ -153,7 +153,9 @@ class SymfonyRequestHandler implements RequestHandlerInterface
                     $this->kernel->terminate($sfRequest, $sfResponse);
                 } catch (\Throwable $exception) {
                     $v = ExceptionPrinter::exception($exception);
-                    echo sprintf("真正结束请求时发生错误：%s\n", $v);
+                    $this->logger?->error('真正结束请求时发生错误', [
+                        'exception' => $v,
+                    ]);
                 }
 
                 // 是否开启 meminfo 分析
