@@ -3,11 +3,13 @@
 namespace Tourze\WorkermanServerBundle\Service;
 
 use Symfony\Component\DependencyInjection\Attribute\AsDecorator;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\AutowireDecorated;
 use Tourze\Symfony\RuntimeContextBundle\Service\ContextServiceInterface;
 use Workerman\Coroutine;
 use Workerman\Worker;
 
+#[Autoconfigure(public: true)]
 #[AsDecorator(decorates: ContextServiceInterface::class)]
 class WorkermanContextService implements ContextServiceInterface
 {
@@ -19,8 +21,6 @@ class WorkermanContextService implements ContextServiceInterface
 
     public function getId(): string
     {
-        return $this->inner->getId();
-
         if (!Worker::isRunning()) {
             return $this->inner->getId();
         }
@@ -29,9 +29,6 @@ class WorkermanContextService implements ContextServiceInterface
 
     public function defer(callable $callback): void
     {
-        $this->inner->defer($callback);
-        return;
-
         if (!Worker::isRunning()) {
             $this->inner->defer($callback);
             return;
@@ -41,7 +38,6 @@ class WorkermanContextService implements ContextServiceInterface
 
     public function supportCoroutine(): bool
     {
-        return false;
         if (!Worker::isRunning()) {
             return $this->inner->supportCoroutine();
         }
