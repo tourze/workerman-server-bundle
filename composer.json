@@ -22,6 +22,7 @@
     "tourze/workerman-file-monitor": "0.0.*",
     "tourze/workerman-process-worker": "0.0.*",
     "tourze/symfony-runtime-context-bundle": "0.0.*",
+    "tourze/workerman-runtime-context-bundle": "0.0.*",
     "tourze/backtrace-helper": "~0.0.5",
     "workerman/psr7": "^2.0",
     "workerman/workerman": "^5.1",
