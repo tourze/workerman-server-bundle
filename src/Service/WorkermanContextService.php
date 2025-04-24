@@ -19,6 +19,8 @@ class WorkermanContextService implements ContextServiceInterface
 
     public function getId(): string
     {
+        return $this->inner->getId();
+
         if (!Worker::isRunning()) {
             return $this->inner->getId();
         }
@@ -27,6 +29,9 @@ class WorkermanContextService implements ContextServiceInterface
 
     public function defer(callable $callback): void
     {
+        $this->inner->defer($callback);
+        return;
+
         if (!Worker::isRunning()) {
             $this->inner->defer($callback);
             return;
@@ -36,6 +41,7 @@ class WorkermanContextService implements ContextServiceInterface
 
     public function supportCoroutine(): bool
     {
+        return false;
         if (!Worker::isRunning()) {
             return $this->inner->supportCoroutine();
         }
