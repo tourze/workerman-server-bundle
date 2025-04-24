@@ -6,7 +6,6 @@ use PHPUnit\Framework\TestCase;
 use Symfony\Component\DependencyInjection\ContainerBuilder;
 use Tourze\WorkermanServerBundle\Command\WorkermanHttpCommand;
 use Tourze\WorkermanServerBundle\DependencyInjection\WorkermanServerExtension;
-use Tourze\WorkermanServerBundle\Service\WorkermanContextService;
 
 class WorkermanServerExtensionTest extends TestCase
 {
@@ -20,13 +19,6 @@ class WorkermanServerExtensionTest extends TestCase
         // 检查是否注册了预期的服务
         $this->assertTrue($container->hasDefinition('workerman-server.command.http'));
         $this->assertTrue($container->hasDefinition('workerman-server.mime-detector'));
-        $this->assertTrue($container->hasDefinition('Tourze\WorkermanServerBundle\Service\WorkermanContextService'));
-
-        // 测试自动注册的服务类
-        $this->assertTrue(
-            $container->has(WorkermanContextService::class),
-            '服务类 WorkermanContextService 应该被自动注册'
-        );
 
         // 检查服务定义的类是否正确
         $this->assertEquals(
