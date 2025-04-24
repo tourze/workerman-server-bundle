@@ -267,11 +267,10 @@ $worker->onMessage = function (TcpConnection $connection, $data) {
         ]
     ];
 
-    // 检查上下文隔离
+    // 收集所有任务的FiberID和上下文ID
     $fiberIds = [];
     $contextIds = [];
 
-    // 收集所有任务的FiberID和上下文ID
     foreach ($result['tests'] as $testType => $testData) {
         foreach ($testData['tasks'] as $task) {
             if (isset($task['fiberId'])) {
@@ -285,9 +284,21 @@ $worker->onMessage = function (TcpConnection $connection, $data) {
 
     // 检查Fiber ID是否唯一
     $uniqueFiberIds = count(array_unique($fiberIds));
+
+    // 计算预期的Fiber ID数量
+    // 串行任务应该共享同一个Fiber ID，而并行任务应该各有自己的Fiber ID
+    $serialTasks = count($result['tests']['serial']['tasks'] ?? []);
+    $parallelTasks = count($result['tests']['parallel']['tasks'] ?? []) +
+        count($result['tests']['barrier']['tasks'] ?? []) +
+        count($result['tests']['channel']['tasks'] ?? []);
+
+    // 预期的不同Fiber ID数量：串行使用1个，并行每个任务1个
+    $expectedUniqueFiberIds = ($serialTasks > 0 ? 1 : 0) + $parallelTasks;
+
     $result['validation'] = [
         'unique_fiber_ids' => $uniqueFiberIds,
         'total_fiber_ids' => count($fiberIds),
+        'expected_unique_fiber_ids' => $expectedUniqueFiberIds,
         'context_isolation' => count(array_filter($contextIds, function ($id) use ($requestId) {
                 return $id === $requestId;
             })) === 0
@@ -297,17 +308,94 @@ $worker->onMessage = function (TcpConnection $connection, $data) {
     cecho("并发测试验证结果:");
     cecho("- 总协程数: " . count($fiberIds));
     cecho("- 不同Fiber ID数: {$uniqueFiberIds}");
+    cecho("- 预期不同Fiber ID数: {$expectedUniqueFiberIds} (串行任务共享1个ID，并行任务各自1个ID)");
 
-    if ($uniqueFiberIds === count($fiberIds)) {
-        cecho("✅ 协程ID测试通过：每个协程有唯一的ID");
-    } else {
-        cecho("❌ 协程ID测试失败：协程ID不唯一");
+    // 打印所有Fiber ID详细信息
+    cecho("所有Fiber ID详细信息:");
+    $fiberIdCounts = array_count_values($fiberIds);
+    $detailedInfo = [];
+
+    // 收集每个测试的Fiber ID详情
+    foreach ($result['tests'] as $testType => $testData) {
+        $detailedInfo[$testType] = [];
+        foreach ($testData['tasks'] as $taskIndex => $task) {
+            if (isset($task['fiberId'])) {
+                $taskId = $task['taskId'] ?? "task_$taskIndex";
+                $detailedInfo[$testType][$taskId] = $task['fiberId'];
+            }
+        }
     }
 
-    if ($result['validation']['context_isolation']) {
-        cecho("✅ 上下文隔离测试通过：子协程未继承主协程上下文");
+    // 输出各测试的Fiber ID
+    foreach ($detailedInfo as $testType => $tasks) {
+        cecho("- {$testType} 测试:");
+        foreach ($tasks as $taskId => $fiberId) {
+            $count = $fiberIdCounts[$fiberId];
+            $duplicateTag = $count > 1 ? "【重复{$count}次】" : "";
+            $expectation = $testType === 'serial' ? "【正常，串行共享ID】" : "";
+            cecho("  - {$taskId}: Fiber ID {$fiberId} {$duplicateTag} {$expectation}");
+        }
+    }
+
+    // 输出重复的Fiber ID
+    $duplicateFiberIds = array_filter($fiberIdCounts, function ($count) {
+        return $count > 1;
+    });
+    if (!empty($duplicateFiberIds)) {
+        cecho("重复的Fiber ID:");
+        foreach ($duplicateFiberIds as $fiberId => $count) {
+            $isSerial = false;
+            foreach ($detailedInfo['serial'] ?? [] as $taskId => $id) {
+                if ($id === $fiberId) {
+                    $isSerial = true;
+                    break;
+                }
+            }
+            $normalityTag = $isSerial ? "【正常，串行任务】" : "【异常，并行任务不应共享ID】";
+            cecho("- Fiber ID {$fiberId} 出现了 {$count} 次 {$normalityTag}");
+        }
+    }
+
+    // 验证Fiber ID数量是否符合预期
+    if ($uniqueFiberIds === $expectedUniqueFiberIds) {
+        cecho("✅ 协程ID测试通过：Fiber ID数量符合预期特性");
     } else {
-        cecho("❌ 上下文隔离测试失败：上下文在协程间泄漏");
+        cecho("❌ 协程ID测试失败：Fiber ID数量不符合预期，应有 {$expectedUniqueFiberIds} 个不同ID，实际有 {$uniqueFiberIds} 个");
+    }
+
+    // 验证并行任务之间的上下文隔离
+    $parallelContextLeak = false;
+
+    // 仅在并行测试中检查上下文隔离
+    foreach (['parallel', 'barrier', 'channel'] as $testType) {
+        if (isset($result['tests'][$testType])) {
+            $testData = $result['tests'][$testType];
+            $testFiberIds = [];
+            $testContextIds = [];
+
+            foreach ($testData['tasks'] as $task) {
+                if (isset($task['fiberId'])) {
+                    $testFiberIds[$task['fiberId']] = true;
+                }
+                if (isset($task['contextId']) && $task['contextId'] !== null) {
+                    $testContextIds[$task['contextId']] = true;
+                }
+            }
+
+            // 如果并行测试中有上下文ID等于请求ID，则有泄漏
+            foreach ($testContextIds as $contextId => $_) {
+                if ($contextId === $requestId) {
+                    $parallelContextLeak = true;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (!$parallelContextLeak) {
+        cecho("✅ 并行上下文隔离测试通过：并行任务中没有主协程上下文泄漏");
+    } else {
+        cecho("❌ 并行上下文隔离测试失败：并行任务中存在主协程上下文泄漏");
     }
 
     // 发送结果
