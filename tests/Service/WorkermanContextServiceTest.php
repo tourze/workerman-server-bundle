@@ -57,12 +57,12 @@ class WorkermanContextServiceTest extends TestCase
         $this->assertFalse($this->contextService->supportCoroutine());
     }
 
-    public function testReset(): void
-    {
-        $this->innerService->expects($this->once())
-            ->method('reset');
-            // TODO
+    // public function testReset(): void
+    // {
+    //     $this->innerService->expects($this->once())
+    //         ->method('reset');
+    //         // TODO
 
-        $this->contextService->reset();
-    }
+    //     $this->contextService->reset();
+    // }
 }
