@@ -5,7 +5,7 @@ namespace Tourze\WorkermanServerBundle;
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Tourze\BacktraceHelper\Backtrace;
 use Tourze\WorkermanServerBundle\HTTP\OnMessage;
-use Tourze\WorkermanServerBundle\HTTP\SymfonyRequestHandler;
+use Tourze\WorkermanServerBundle\RequestHandler\SymfonyRequestHandler;
 
 class WorkermanServerBundle extends Bundle
 {

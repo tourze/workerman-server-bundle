@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\HTTP;
+namespace Tourze\WorkermanServerBundle\RequestHandler;
 
 use Nyholm\Psr7\Response;
 use Psr\Http\Message\ResponseInterface;
@@ -11,11 +11,13 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
+use Symfony\Component\HttpFoundation\Request as SfRequest;
+use Symfony\Component\HttpFoundation\Response as SfResponse;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
 use Tourze\BacktraceHelper\ExceptionPrinter;
-use Tourze\Symfony\RuntimeContextBundle\Service\ContextServiceInterface;
+use Workerman\Timer;
 
 /**
  * 统一的HTTP请求处理
@@ -32,13 +34,6 @@ class SymfonyRequestHandler implements RequestHandlerInterface
 
     public function handle(ServerRequestInterface $request): ResponseInterface
     {
-        if ('/health' === $request->getUri()->getPath()) {
-            return new Response(200, body: strval(time()));
-        }
-        if ('/health.php' === $request->getUri()->getPath()) {
-            return new Response(200, body: strval(time()));
-        }
-
         $_GET = $request->getQueryParams();
         $_REQUEST = [...$_GET];
 
@@ -46,37 +41,6 @@ class SymfonyRequestHandler implements RequestHandlerInterface
         \parse_str(\str_replace('; ', '&', $request->getHeaderLine('cookie')), $_COOKIE);
 
         // $this->output->writeln("<comment>{$this->worker->name}-{$this->worker->id}</comment> <info>{$request->getMethod()}</info> {$request->getUri()->getPath()}");
-
-        // 静态文件的支持
-        $checkFile = "{$this->kernel->getProjectDir()}/public{$request->getUri()->getPath()}";
-        $checkFile = str_replace('..', '/', $checkFile);
-        // $output->writeln("正在处理：{$checkFile}");
-        // 兼容访问目录
-        if (is_dir($checkFile)) {
-            $checkFile = rtrim($checkFile, '/');
-            if (is_file("{$checkFile}/index.htm")) {
-                $checkFile = "{$checkFile}/index.htm";
-            }
-            if (is_file("{$checkFile}/index.html")) {
-                $checkFile = "{$checkFile}/index.html";
-            }
-        }
-        if (is_file($checkFile) && !str_contains($checkFile, '.php')) {
-            // 检查if-modified-since头判断文件是否修改过
-            if (!empty($if_modified_since = $request->getHeaderLine('if-modified-since'))) {
-                $modified_time = date('D, d M Y H:i:s', filemtime($checkFile)) . ' ' . \date_default_timezone_get();
-                // 文件未修改则返回304
-                if ($modified_time === $if_modified_since) {
-                    return new Response(304);
-                }
-            }
-
-            // 文件修改过或者没有if-modified-since头则发送文件
-            $response = new WorkermanFileResponse();
-            $response->setFile($checkFile);
-
-            return $response;
-        }
 
         $sfRequest = $this->httpFoundationFactory->createRequest($request);
 
@@ -142,34 +106,41 @@ class SymfonyRequestHandler implements RequestHandlerInterface
             $this->logger?->error('执行请求时发生未被捕捉的异常', [
                 'exception' => $fe,
             ]);
-            $sfResponse = new \Symfony\Component\HttpFoundation\Response($fe);
+            $sfResponse = new SfResponse($fe);
         }
 
         // 尽可能将事务丢到异步去进行，这样前端响应会快点
         if ($this->kernel instanceof TerminableInterface) {
             // 这里延迟了一点才执行，是希望这个业务代码尽可能晚点执行。参考 https://www.workerman.net/doc/workerman/timer/add.html
-            $this->kernel->getContainer()->get(ContextServiceInterface::class)->defer(function () use ($sfRequest, $sfResponse) {
-                try {
-                    $this->kernel->terminate($sfRequest, $sfResponse);
-                } catch (\Throwable $exception) {
-                    $v = ExceptionPrinter::exception($exception);
-                    $this->logger?->error('真正结束请求时发生错误', [
-                        'exception' => $v,
-                    ]);
-                }
-
-                // 是否开启 meminfo 分析
-                $openMeminfo = 'true' === $sfRequest->query->get('__meminfo');
-                // 注销请求和响应对象
-                unset($sfRequest);
-//                if ($openMeminfo && function_exists('meminfo_dump')) {
-//                    meminfo_dump(fopen($this->kernel->getProjectDir() . '/var/php_mem_dump_' . time() . '.json', 'w'));
-//                }
-            });
+            Timer::delay(0.01, $this->onTerminal(...), [$sfRequest, $sfResponse]);
         }
 
         // TODO 类似 http_cache 这种服务，应该需要再处理的，详细看 \Symfony\Component\HttpKernel\HttpCache\HttpCache::__construct
 
         return $this->httpMessageFactory->createResponse($sfResponse);
+    }
+
+    private function onTerminal(SfRequest $request, SfResponse $response): void
+    {
+        try {
+            if ($this->kernel instanceof TerminableInterface) {
+                $this->kernel->terminate($request, $response);
+            }
+        } catch (\Throwable $exception) {
+            $v = ExceptionPrinter::exception($exception);
+            $this->logger?->error('真正结束请求时发生错误', [
+                'exception' => $v,
+            ]);
+        }
+
+        // TODO 主动重置一次所有服务
+
+        // 是否开启 meminfo 分析
+        $openMeminfo = 'true' === $request->query->get('__meminfo');
+        // 注销请求和响应对象
+//        unset($sfRequest);
+//                if ($openMeminfo && function_exists('meminfo_dump')) {
+//                    meminfo_dump(fopen($this->kernel->getProjectDir() . '/var/php_mem_dump_' . time() . '.json', 'w'));
+//                }
     }
 }

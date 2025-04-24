@@ -19,7 +19,7 @@ use Symfony\Component\HttpFoundation\ServerBag;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Tourze\Symfony\RuntimeContextBundle\Service\ContextServiceInterface;
-use Tourze\WorkermanServerBundle\HTTP\SymfonyRequestHandler;
+use Tourze\WorkermanServerBundle\RequestHandler\SymfonyRequestHandler;
 
 /**
  * 此类测试 HTTP 请求处理器

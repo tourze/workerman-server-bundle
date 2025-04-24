@@ -12,8 +12,8 @@ use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Tourze\WorkermanServerBundle\HTTP\OnMessage;
 use Tourze\WorkermanServerBundle\HTTP\PsrRequestFactory;
-use Tourze\WorkermanServerBundle\HTTP\SymfonyRequestHandler;
 use Tourze\WorkermanServerBundle\HTTP\WorkermanResponseEmitter;
+use Tourze\WorkermanServerBundle\RequestHandler\SymfonyRequestHandler;
 use Tourze\WorkermanServerBundle\WorkermanServerBundle;
 
 class WorkermanServerBundleTest extends TestCase

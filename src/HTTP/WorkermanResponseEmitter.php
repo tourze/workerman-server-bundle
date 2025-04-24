@@ -30,7 +30,7 @@ final class WorkermanResponseEmitter
 
     private function sendResponse(WorkermanRequest $request, mixed $buffer, WorkermanTcpConnection $connection): void
     {
-        if ('Keep-Alive' === $request->header('connection')) {
+        if ('keep-alive' === strtolower($request->header('connection'))) {
             $connection->send($buffer);
 
             return;
