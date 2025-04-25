@@ -48,8 +48,5 @@
     "phpstan/phpstan": "^2.1",
     "phpunit/phpunit": "^10.0",
     "maglnet/composer-require-checker": "^4"
-  },
-  "scripts": {
-    "phpstan": "phpstan analyse src -l 1"
   }
 }

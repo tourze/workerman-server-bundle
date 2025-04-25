@@ -1,4 +1,4 @@
-name: PHPStan Check
+name: Composer dependency analyse
 
 on:
   push:
@@ -25,12 +25,13 @@ jobs:
         uses: actions/cache@v3
         with:
           path: vendor
-          key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
+          key: ${{ runner.os }}-php-${{ hashFiles("**/composer.lock") }}
           restore-keys: |
             ${{ runner.os }}-php-
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
-      - name: Run PHPStan
-        run: ./vendor/bin/phpstan analyse src -l 1
+      - name: Detect composer dependency issues
+        run: vendor/bin/composer-dependency-analyser
+
