@@ -13,14 +13,6 @@ final class WorkermanResponseEmitter
 {
     public function emit(WorkermanRequest $request, ResponseInterface $response, WorkermanTcpConnection $connection): void
     {
-        // 特殊的文件渲染
-        if ($response instanceof WorkermanFileResponse) {
-            $wkResponse = (new Response())->withFile($response->getFile());
-            $this->sendResponse($request, $wkResponse, $connection);
-
-            return;
-        }
-
         $wkResponse = (new Response())
             ->withStatus($response->getStatusCode(), $response->getReasonPhrase())
             ->withHeaders($response->getHeaders())

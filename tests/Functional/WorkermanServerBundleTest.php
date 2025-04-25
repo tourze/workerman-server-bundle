@@ -5,15 +5,16 @@ namespace Tourze\WorkermanServerBundle\Tests\Functional;
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use Psr\Log\LoggerInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\HttpFoundation\Response as SymfonyResponse;
 use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Tourze\PSR15SymfonyRequestHandler\SymfonyRequestHandler;
 use Tourze\WorkermanServerBundle\HTTP\OnMessage;
 use Tourze\WorkermanServerBundle\HTTP\PsrRequestFactory;
 use Tourze\WorkermanServerBundle\HTTP\WorkermanResponseEmitter;
-use Tourze\WorkermanServerBundle\RequestHandler\SymfonyRequestHandler;
 use Tourze\WorkermanServerBundle\WorkermanServerBundle;
 
 class WorkermanServerBundleTest extends TestCase
@@ -30,8 +31,7 @@ class WorkermanServerBundleTest extends TestCase
 
         // 模拟同时实现 HttpKernelInterface 和 KernelInterface 的对象
         /** @var HttpKernelInterface&KernelInterface&MockObject $kernel */
-        $kernel = $this->getMockBuilder(HttpKernelInterface::class)
-            ->getMock();
+        $kernel = $this->createMock(KernelInterface::class);
         $kernel->method('handle')
             ->willReturn(new SymfonyResponse('Test Response'));
 
@@ -50,11 +50,17 @@ class WorkermanServerBundleTest extends TestCase
 
         $responseEmitter = new WorkermanResponseEmitter();
 
-        // 创建 OnMessage 处理器
+        // 创建日志模拟
+        /** @var LoggerInterface&MockObject $logger */
+        $logger = $this->createMock(LoggerInterface::class);
+
+        // 创建 OnMessage 处理器 - 修复参数顺序
         $onMessage = new OnMessage(
+            $kernel,  // 第一个参数是 KernelInterface
             $psrRequestFactory,
             $responseEmitter,
-            $requestHandler
+            $requestHandler,
+            $logger
         );
 
         // 确保类已正确初始化
