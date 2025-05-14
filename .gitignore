@@ -1,4 +1,12 @@
+var/
+vendor/
+.phpunit.cache/
+composer.lock
+.php-cs-fixer.cache
+.phpunit.result.cache
+phpunit.xml
 .idea
 /vendor
+*.cache
 *.log
 *.pid
