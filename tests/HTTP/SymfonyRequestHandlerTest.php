@@ -12,7 +12,7 @@ use Symfony\Bridge\PsrHttpMessage\HttpFoundationFactoryInterface;
 use Symfony\Bridge\PsrHttpMessage\HttpMessageFactoryInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface as SymfonyContainerInterface;
 use Symfony\Component\HttpFoundation\HeaderBag;
-use Symfony\Component\HttpFoundation\ParameterBag;
+use Symfony\Component\HttpFoundation\InputBag;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\ServerBag;
@@ -70,15 +70,16 @@ class SymfonyRequestHandlerTest extends TestCase
     public function testHandleRegularRequest(): void
     {
         // 创建模拟对象
-        /** @var ContextServiceInterface|MockObject $contextService */
+        /** @var MockObject&ContextServiceInterface $contextService */
         $contextService = $this->createMock(ContextServiceInterface::class);
 
         // 创建核心模拟对象
-        /** @var KernelInterface|HttpKernelInterface|MockObject $kernel */
-        $kernel = $this->createMock(KernelInterface::class);
+        /** @var MockObject&HttpKernelInterface&KernelInterface $kernel */
+        $kernel = $this->getMockBuilder(KernelInterface::class)
+            ->getMock();
 
         // 创建 Symfony 容器模拟对象
-        /** @var SymfonyContainerInterface|MockObject $symfonyContainer */
+        /** @var MockObject&SymfonyContainerInterface $symfonyContainer */
         $symfonyContainer = $this->createMock(SymfonyContainerInterface::class);
 
         // 设置容器行为
@@ -97,26 +98,18 @@ class SymfonyRequestHandlerTest extends TestCase
         $kernel->method('handle')
             ->willReturn(new Response('test response'));
 
-        // 核心需要实现 HttpKernelInterface, 所以手动添加方法
-        if (!$kernel instanceof HttpKernelInterface) {
-            $kernel = $this->getMockBuilder(get_class($kernel))
-                ->addMethods(['handle'])
-                ->getMock();
-
-            $kernel->method('handle')
-                ->willReturn(new Response('test response'));
-        }
+        // 核心需要实现 HttpKernelInterface, 所以直接使用 HttpKernelInterface mock
 
         // 创建模拟对象
-        /** @var HttpFoundationFactoryInterface|MockObject $httpFoundationFactory */
+        /** @var MockObject&HttpFoundationFactoryInterface $httpFoundationFactory */
         $httpFoundationFactory = $this->createMock(HttpFoundationFactoryInterface::class);
-        /** @var HttpMessageFactoryInterface|MockObject $httpMessageFactory */
+        /** @var MockObject&HttpMessageFactoryInterface $httpMessageFactory */
         $httpMessageFactory = $this->createMock(HttpMessageFactoryInterface::class);
-        /** @var LoggerInterface|MockObject $logger */
+        /** @var MockObject&LoggerInterface $logger */
         $logger = $this->createMock(LoggerInterface::class);
 
         // 创建模拟容器
-        /** @var ContainerInterface|MockObject $container */
+        /** @var MockObject&ContainerInterface $container */
         $container = $this->createMock(ContainerInterface::class);
 
         $container->method('get')
@@ -124,16 +117,12 @@ class SymfonyRequestHandlerTest extends TestCase
             ->willReturn($contextService);
 
         // 创建模拟 Symfony 请求
-        /** @var Request|MockObject $sfRequest */
+        /** @var MockObject&Request $sfRequest */
         $sfRequest = $this->createMock(Request::class);
         $sfRequest->headers = new HeaderBag();
         $sfRequest->server = new ServerBag();
-        /** @var ParameterBag|MockObject $queryBag */
-        $queryBag = $this->createMock(ParameterBag::class);
-        $sfRequest->query = $queryBag;
+        $sfRequest->query = new InputBag();
 
-        $queryBag->method('get')
-            ->willReturn(null);
 
         // 设置请求工厂期望
         $httpFoundationFactory->expects($this->once())
@@ -141,7 +130,7 @@ class SymfonyRequestHandlerTest extends TestCase
             ->willReturn($sfRequest);
 
         // 设置消息工厂期望
-        /** @var ResponseInterface|MockObject $psrResponse */
+        /** @var MockObject&ResponseInterface $psrResponse */
         $psrResponse = $this->createMock(ResponseInterface::class);
         $httpMessageFactory->expects($this->once())
             ->method('createResponse')
@@ -169,14 +158,14 @@ class SymfonyRequestHandlerTest extends TestCase
     private function createSymfonyRequestHandler(): SymfonyRequestHandler
     {
         // 创建模拟对象
-        /** @var HttpKernelInterface|KernelInterface|MockObject $kernel */
+        /** @var MockObject&HttpKernelInterface&KernelInterface $kernel */
         $kernel = $this->createMock(HttpKernelInterface::class);
 
-        /** @var HttpFoundationFactoryInterface|MockObject $httpFoundationFactory */
+        /** @var MockObject&HttpFoundationFactoryInterface $httpFoundationFactory */
         $httpFoundationFactory = $this->createMock(HttpFoundationFactoryInterface::class);
-        /** @var HttpMessageFactoryInterface|MockObject $httpMessageFactory */
+        /** @var MockObject&HttpMessageFactoryInterface $httpMessageFactory */
         $httpMessageFactory = $this->createMock(HttpMessageFactoryInterface::class);
-        /** @var LoggerInterface|MockObject $logger */
+        /** @var MockObject&LoggerInterface $logger */
         $logger = $this->createMock(LoggerInterface::class);
 
         // 健康检查端点不需要调用 kernel->getProjectDir()，所以这里不需要模拟它

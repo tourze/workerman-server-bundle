@@ -24,13 +24,15 @@ use Workerman\Worker;
 use function Workerman\Psr7\response_to_string;
 
 #[AsCommand(
-    name: 'workerman:http',
+    name: self::NAME,
     description: '启动Workerman-HTTP服务'
 )]
 class WorkermanHttpCommand extends Command
 {
+    public const NAME = 'workerman:http';
+    
     // 保留静态属性以保持向后兼容
-    protected static $defaultName = 'workerman:http';
+    protected static $defaultName = self::NAME;
 
     protected HttpFoundationFactory $httpFoundationFactory;
 

@@ -39,8 +39,10 @@ class OnMessage
     public function __invoke(WorkermanTcpConnection $workermanTcpConnection, WorkermanRequest $workermanRequest): void
     {
         try {
-            $this->sfRequestHandler?->setRequest(null);
-            $this->sfRequestHandler?->setResponse(null);
+            if ($this->sfRequestHandler !== null) {
+                $this->sfRequestHandler->setRequest(null);
+                $this->sfRequestHandler->setResponse(null);
+            }
 
             $this->workermanResponseEmitter->emit(
                 $workermanRequest,
@@ -49,8 +51,12 @@ class OnMessage
             );
 
             // 在这里处理 terminal 逻辑
-            if ($this->kernel instanceof TerminableInterface && $this->sfRequestHandler?->getRequest() && $this->sfRequestHandler?->getResponse()) {
-                $this->kernel->terminate($this->sfRequestHandler?->getRequest(), $this->sfRequestHandler?->getResponse());
+            if ($this->kernel instanceof TerminableInterface && $this->sfRequestHandler !== null) {
+                $request = $this->sfRequestHandler->getRequest();
+                $response = $this->sfRequestHandler->getResponse();
+                if ($request !== null && $response !== null) {
+                    $this->kernel->terminate($request, $response);
+                }
             }
         } catch (\Throwable $exception) {
             $this->logger->error('处理WorkermanHTTP请求时发生异常', [

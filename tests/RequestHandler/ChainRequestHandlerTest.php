@@ -25,11 +25,11 @@ class ChainRequestHandlerTest extends TestCase
 
     public function testFirstHandlerNon404Response(): void
     {
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler1 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(200, body: 'Success'));
 
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler2 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->expects($this->never())->method('handle');
 
@@ -44,11 +44,11 @@ class ChainRequestHandlerTest extends TestCase
 
     public function testSkips404AndUseSecondHandler(): void
     {
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler1 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(404));
 
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler2 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->method('handle')->willReturn(new Response(200, body: 'Found in second handler'));
 
@@ -63,11 +63,11 @@ class ChainRequestHandlerTest extends TestCase
 
     public function testAllHandlersReturn404(): void
     {
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler1 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(404));
 
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler2 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->method('handle')->willReturn(new Response(404));
 
@@ -82,11 +82,11 @@ class ChainRequestHandlerTest extends TestCase
 
     public function testAddHandler(): void
     {
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler1 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(404));
 
-        /** @var RequestHandlerInterface|\PHPUnit\Framework\MockObject\MockObject $handler2 */
+        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->method('handle')->willReturn(new Response(200, body: 'Added handler'));
 

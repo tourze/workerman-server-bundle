@@ -61,15 +61,23 @@ final class PsrRequestFactory
     }
 
     /**
-     * @param array<string, array<string, int|string>> $files
+     * @param array<string, array<string, int|string>|array> $files
      *
-     * @return array<string, UploadedFileInterface>
+     * @return array<string, UploadedFileInterface|array>
      */
     private function uploadedFiles(array $files): array
     {
         $uploadedFiles = [];
         foreach ($files as $key => $file) {
-            $uploadedFiles[$key] = isset($file['tmp_name']) ? $this->createUploadedFile($file) : $this->uploadedFiles($file);
+            if (is_array($file)) {
+                if (isset($file['tmp_name'])) {
+                    /** @var array<string, int|string> $file */
+                    $uploadedFiles[$key] = $this->createUploadedFile($file);
+                } else {
+                    /** @var array<string, array<string, int|string>|array> $file */
+                    $uploadedFiles[$key] = $this->uploadedFiles($file);
+                }
+            }
         }
 
         return $uploadedFiles;
