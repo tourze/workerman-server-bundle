@@ -8,6 +8,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Tourze\WorkermanServerBundle\Exception\RequestProcessingException;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request as WorkermanRequest;
 
@@ -68,7 +69,7 @@ class TestPsrRequestFactory
     public function create($connection, $request): ServerRequestInterface
     {
         if ($this->shouldThrowException) {
-            throw new \RuntimeException('Test exception');
+            throw new RequestProcessingException('Test exception');
         }
         return $this->psrRequest;
     }
