@@ -10,6 +10,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ProperHeaderCasingResponseFactory extends PsrHttpFactory
 {
+    /** @var array<string, string> */
     private static array $cache = [
         'server' => 'Server',
         'connection' => 'Connection',

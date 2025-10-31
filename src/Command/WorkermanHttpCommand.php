@@ -2,37 +2,39 @@
 
 namespace Tourze\WorkermanServerBundle\Command;
 
+use Fidry\CpuCoreCounter\CpuCoreCounter;
+use Fidry\CpuCoreCounter\Finder\DummyCpuCoreFinder;
+use Fidry\CpuCoreCounter\Finder\FinderRegistry;
 use League\MimeTypeDetection\MimeTypeDetector;
 use Nyholm\Psr7\Factory\Psr17Factory;
-use Nyholm\Psr7\Response;
 use Symfony\Bridge\PsrHttpMessage\Factory\HttpFoundationFactory;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\Process\PhpExecutableFinder;
-use Tourze\Workerman\FileMonitor\FileMonitorWorker;
+use Symfony\Contracts\Service\ResetInterface;
 use Tourze\Workerman\ProcessWorker\ProcessWorker;
+use Tourze\WorkermanServerBundle\Exception\WorkermanServerException;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
-use Workerman\Psr7\ServerRequest;
+use Workerman\Protocols\Http\Request;
 use Workerman\Worker;
-use function Workerman\Psr7\response_to_string;
 
 #[AsCommand(
     name: self::NAME,
     description: '启动Workerman-HTTP服务'
 )]
+#[Autoconfigure(public: true)]
 class WorkermanHttpCommand extends Command
 {
     public const NAME = 'workerman:http';
-    
-    // 保留静态属性以保持向后兼容
-    protected static $defaultName = self::NAME;
 
     protected HttpFoundationFactory $httpFoundationFactory;
 
@@ -40,18 +42,26 @@ class WorkermanHttpCommand extends Command
 
     private int $maxRequest = 10000;
 
+    private CpuCoreCounter $coreCounter;
+
     public function __construct(
         private readonly KernelInterface $kernel,
+        #[Autowire(param: 'kernel.project_dir')] private readonly string $projectDir,
         #[Autowire(service: 'workerman-server.mime-detector')] private readonly MimeTypeDetector $mimeTypeDetector,
-    )
-    {
+    ) {
         parent::__construct();
-        //$this->kernel = new Kernel($_ENV['APP_ENV'], (bool)$_ENV['APP_DEBUG']);
-        //$this->dbConnection = $dbConnection;
+        // $this->kernel = new Kernel($_ENV['APP_ENV'], (bool)$_ENV['APP_DEBUG']);
+        // $this->dbConnection = $dbConnection;
 
         $this->httpFoundationFactory = new HttpFoundationFactory();
         $psr17Factory = new Psr17Factory();
         $this->psrHttpFactory = new PsrHttpFactory($psr17Factory, $psr17Factory, $psr17Factory, $psr17Factory);
+
+        // 使用 fidry/cpu-core-counter 获取 CPU 核心数
+        $this->coreCounter = new CpuCoreCounter([
+            ...FinderRegistry::getDefaultLogicalFinders(),
+            new DummyCpuCoreFinder(1), // 默认值
+        ]);
     }
 
     protected function configure(): void
@@ -62,116 +72,219 @@ class WorkermanHttpCommand extends Command
             ->addArgument('restart')
             ->addArgument('status')
             ->addArgument('reload')
-            ->addArgument('connections');
+            ->addArgument('connections')
+        ;
     }
 
     /**
      * 运行HTTP服务器
-     *
-     * @return void
      */
     protected function runHttpServer(InputInterface $input, OutputInterface $output): void
     {
-        Http::requestClass(ServerRequest::class);
         $worker = new Worker('http://127.0.0.1:8080');
         $worker->name = 'symfony-http-server';
-        $worker->onWorkerStart = function () use ($output) {
+        $envCount = $_ENV['WORKERMAN_HTTP_SERVER_PROCESS_COUNT'] ?? null;
+        $worker->count = is_numeric($envCount) ? (int) $envCount : max(2, (int) ($this->coreCounter->getCount() / 2));
+        $worker->onWorkerStart = function () use ($output): void {
             $this->resetServiceTimer($output);
+            //            if ($this->kernel->isDebug()) {
+            //                $this->createFileMonitor();
+            //            }
         };
 
-        $worker->onMessage = function (TcpConnection $connection, ServerRequest $psrRequest) use ($output) {
-            $checkFile = "{$this->kernel->getProjectDir()}/public{$psrRequest->getUri()->getPath()}";
-            $checkFile = str_replace('..', '/', $checkFile);
-            //$output->writeln("正在处理：{$checkFile}");
-
-            if (is_file($checkFile)) {
-                $code = file_get_contents($checkFile);
-                $psrResponse = new Response(200, [
-                    'Content-Type' => $this->mimeTypeDetector->detectMimeType($checkFile, $code),
-                    'Last-Modified' => gmdate('D, d M Y H:i:s', filemtime($checkFile)) . ' GMT',
-                ], $code);
-                $this->sendResponse($psrRequest, $connection, response_to_string($psrResponse));
+        $worker->onMessage = function (TcpConnection $connection, Request $request) use ($output): void {
+            if ($this->handleStaticFile($connection, $request)) {
                 return;
             }
 
-            // 将PSR规范的请求，转换为Symfony请求进行处理，最终再转换成PSR响应进行返回
-            $symfonyRequest = $this->httpFoundationFactory->createRequest($psrRequest);
-            $symfonyResponse = $this->kernel->handle($symfonyRequest);
-            $psrResponse = $this->psrHttpFactory->createResponse($symfonyResponse);
-
-            // 注意，下面的意思是直接格式化整个HTTP报文，做得很彻底喔
-            $this->sendResponse($psrRequest, $connection, response_to_string($psrResponse));
-
-            // 这里做最终的环境变量收集和处理
-            if ($this->kernel instanceof TerminableInterface) {
-                $this->kernel->terminate($symfonyRequest, $symfonyResponse);
-            }
-
-            //设置单进程请求量达到额定时重启，防止代码写得不好产生OOM
-            static $maxRequest;
-            if (++$maxRequest > $this->maxRequest) {
-                $output->writeln("max request {$maxRequest} reached and reload");
-                // send SIGUSR1 signal to master process for reload
-                posix_kill(posix_getppid(), SIGUSR1);
-            }
+            $this->handleDynamicRequest($connection, $request, $output);
         };
     }
 
-    private function sendResponse(ServerRequest $request, TcpConnection $connection, string $content): void
+    private function handleStaticFile(TcpConnection $connection, Request $request): bool
     {
-        $connection->send($content, true);
-        $keepAlive = in_array('keep-alive', explode(',', strtolower($request->getHeaderLine('connection'))), true);
-        if (!$keepAlive) {
-            $connection->close();
+        $checkFile = "{$this->projectDir}/public{$request->path()}";
+        $checkFile = str_replace('..', '/', $checkFile);
+
+        if (!is_file($checkFile)) {
+            return false;
         }
+
+        $code = file_get_contents($checkFile);
+        if (false === $code) {
+            $code = '';
+        }
+        $mtime = filemtime($checkFile);
+        if (false === $mtime) {
+            $mtime = time();
+        }
+
+        $workermanResponse = new Http\Response(
+            200,
+            [
+                'Content-Type' => $this->mimeTypeDetector->detectMimeType($checkFile, $code),
+                'Last-Modified' => gmdate('D, d M Y H:i:s', $mtime) . ' GMT',
+            ],
+            $code
+        );
+
+        $connection->send($workermanResponse);
+
+        return true;
+    }
+
+    private function handleDynamicRequest(TcpConnection $connection, Request $request, OutputInterface $output): void
+    {
+        $this->clearOutputBuffers();
+
+        $symfonyRequest = null;
+        $symfonyResponse = null;
+
+        try {
+            $symfonyRequest = $this->createSymfonyRequest($request);
+
+            ob_start();
+            $symfonyResponse = $this->kernel->handle($symfonyRequest);
+            ob_get_clean();
+
+            $this->sendSymfonyResponse($connection, $symfonyResponse);
+        } catch (\Throwable $e) {
+            $this->clearOutputBuffers();
+            $connection->send("HTTP/1.1 500 Internal Server Error\r\n\r\nError: " . $e->getMessage());
+        }
+
+        $this->terminateKernel($symfonyRequest, $symfonyResponse);
+        $this->resetServices($output);
+        $this->handleRequestLimit($output);
+    }
+
+    private function clearOutputBuffers(): void
+    {
+        while (ob_get_level() > 0) {
+            ob_end_clean();
+        }
+    }
+
+    private function terminateKernel(?\Symfony\Component\HttpFoundation\Request $request, ?Response $response): void
+    {
+        if ($this->kernel instanceof TerminableInterface && null !== $request && null !== $response) {
+            $this->kernel->terminate($request, $response);
+        }
+    }
+
+    private function handleRequestLimit(OutputInterface $output): void
+    {
+        /** @var int $requestCount */
+        static $requestCount = 0;
+        ++$requestCount;
+        if ($requestCount > $this->maxRequest) {
+            $output->writeln("max request {$requestCount} reached and reload");
+            posix_kill(posix_getppid(), SIGUSR1);
+        }
+    }
+
+    private function createSymfonyRequest(Request $request): \Symfony\Component\HttpFoundation\Request
+    {
+        $query = $request->get();
+        $post = $request->post();
+        $files = $request->file() ?? [];
+        $cookies = $request->cookie() ?? [];
+        $server = [
+            'REQUEST_METHOD' => $request->method(),
+            'REQUEST_URI' => $request->uri(),
+            'SERVER_NAME' => $request->host(),
+            'QUERY_STRING' => $request->queryString(),
+            'PHP_SAPI' => 'cli-server',
+        ];
+
+        $headers = $request->header();
+        if (is_array($headers)) {
+            foreach ($headers as $name => $value) {
+                if (is_string($name)) {
+                    $server['HTTP_' . strtoupper(str_replace('-', '_', $name))] = $value;
+                }
+            }
+        }
+
+        return new \Symfony\Component\HttpFoundation\Request(
+            is_array($query) ? $query : [],
+            is_array($post) ? $post : [],
+            [],
+            is_array($cookies) ? $cookies : [],
+            $files,
+            $server,
+            $request->rawBody()
+        );
+    }
+
+    private function sendSymfonyResponse(TcpConnection $connection, Response $response): void
+    {
+        // 使用Workerman的HTTP响应对象来避免重复头问题
+        $workermanResponse = new Http\Response(
+            $response->getStatusCode(),
+            $response->headers->all(),
+            false !== $response->getContent() ? $response->getContent() : ''
+        );
+
+        $connection->send($workermanResponse);
     }
 
     /**
      * 做服务保活
-     *
-     * @param OutputInterface $output
-     * @return void
      */
-    public function resetServiceTimer(OutputInterface $output)
+    public function resetServiceTimer(OutputInterface $output): void
     {
-        // 定时连接mysql并执行一个命令，进行保活
-//        Timer::add(20, function () use ($output) {
-//            try {
-//                $this->dbConnection->executeQuery('SELECT 1');
-//            } catch (Throwable $e) {
-//                $output->writeln("dbal链接保活时发生错误：" . $e);
-//            }
-//        });
-        // TODO 其实更加好的方法，是遍历所有服务，然后看哪个服务是支持reset的，直接reset
+        // Worker启动时的初始化逻辑
+    }
+
+    private function resetServices(OutputInterface $output): void
+    {
+        // 强制垃圾回收，防止内存泄露
+        if (function_exists('gc_collect_cycles')) {
+            gc_collect_cycles();
+        }
+
+        // 重置关键服务
+        $container = $this->kernel->getContainer();
+
+        $resetableServices = [
+            'session.factory',
+            'doctrine.dbal.default_connection',
+            'doctrine.orm.default_entity_manager',
+        ];
+
+        foreach ($resetableServices as $serviceId) {
+            if ($container->has($serviceId)) {
+                try {
+                    $service = $container->get($serviceId);
+                    if ($service instanceof ResetInterface) {
+                        $service->reset();
+                    }
+                } catch (\Throwable $e) {
+                    // 忽略重置失败
+                }
+            }
+        }
     }
 
     private function createMessenger(KernelInterface $kernel): void
     {
         $finder = new PhpExecutableFinder();
         $phpExecutable = $finder->find();
+        if (false === $phpExecutable) {
+            throw WorkermanServerException::phpExecutableNotFound();
+        }
         $phpExecutable = escapeshellarg($phpExecutable);
 
         // 启动 messenger
-        $worker = new ProcessWorker("$phpExecutable {$kernel->getProjectDir()}/bin/console messenger:consume async --memory-limit=512M --time-limit=600 --no-debug");
+        $worker = new ProcessWorker("{$phpExecutable} {$kernel->getProjectDir()}/bin/console messenger:consume async --memory-limit=512M --time-limit=600 --no-debug");
         $worker->name = 'AsyncMessenger';
-        $worker->onProcessStart = function () {
+        $worker->onProcessStart = function (): void {
             $_ENV['WORKER_NAME'] = 'async-messenger';
+            //            if ($this->kernel->isDebug()) {
+            //                $this->createFileMonitor();
+            //            }
         };
-    }
-
-    private function createFileMonitor(KernelInterface $kernel): void
-    {
-        new FileMonitorWorker([
-            // 默认只监听这几个目录
-            "{$kernel->getProjectDir()}/config",
-            "{$kernel->getProjectDir()}/src",
-            "{$kernel->getProjectDir()}/templates",
-            "{$kernel->getProjectDir()}/translations",
-        ], [
-            'php',
-            'yml',
-            'yaml',
-        ]);
     }
 
     protected function execute(InputInterface $input, OutputInterface $output): int
@@ -182,10 +295,6 @@ class WorkermanHttpCommand extends Command
         // 运行worker
         $this->runHttpServer($input, $output);
         $this->createMessenger($this->kernel);
-
-        if ($this->kernel->isDebug()) {
-            $this->createFileMonitor($this->kernel);
-        }
 
         Worker::runAll();
 

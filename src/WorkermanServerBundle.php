@@ -4,16 +4,29 @@ namespace Tourze\WorkermanServerBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Tourze\BacktraceHelper\Backtrace;
+use Tourze\BundleDependency\BundleDependencyInterface;
 use Tourze\PSR15SymfonyRequestHandler\SymfonyRequestHandler;
 use Tourze\WorkermanServerBundle\HTTP\OnMessage;
 
-class WorkermanServerBundle extends Bundle
+class WorkermanServerBundle extends Bundle implements BundleDependencyInterface
 {
+    public static function getBundleDependencies(): array
+    {
+        return [];
+    }
+
     public function boot(): void
     {
         parent::boot();
 
-        Backtrace::addProdIgnoreFiles((new \ReflectionClass(SymfonyRequestHandler::class))->getFileName());
-        Backtrace::addProdIgnoreFiles((new \ReflectionClass(OnMessage::class))->getFileName());
+        $symfonyRequestHandlerFile = (new \ReflectionClass(SymfonyRequestHandler::class))->getFileName();
+        if (false !== $symfonyRequestHandlerFile) {
+            Backtrace::addProdIgnoreFiles($symfonyRequestHandlerFile);
+        }
+
+        $onMessageFile = (new \ReflectionClass(OnMessage::class))->getFileName();
+        if (false !== $onMessageFile) {
+            Backtrace::addProdIgnoreFiles($onMessageFile);
+        }
     }
 }

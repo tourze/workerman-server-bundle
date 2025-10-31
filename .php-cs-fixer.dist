@@ -1,0 +1,48 @@
+<?php
+
+$config = new PhpCsFixer\Config();
+
+return $config
+    ->setRules([
+        '@Symfony' => true,
+        '@Symfony:risky' => true,
+        '@PHPUnit75Migration:risky' => true,
+        'php_unit_test_case_static_method_calls' => ['call_type' => 'self'],
+        'php_unit_dedicate_assert' => ['target' => 'newest'],
+        'php_unit_namespaced' => true,
+        'php_unit_construct' => true,
+        'php_unit_expectation' => true,
+        'php_unit_mock' => true,
+        'php_unit_test_annotation' => true,
+        'strict_comparison' => true,
+        'strict_param' => true,
+        'array_syntax' => ['syntax' => 'short'],
+        'ordered_imports' => true,
+        'no_unused_imports' => true,
+        'single_import_per_statement' => false,
+        'single_line_after_imports' => true,
+        'yoda_style' => true,
+        'header_comment' => [
+            'header' => <<<EOF
+This file is part of the tourze/workerman-server-bundle project.
+
+(c) tourze
+
+For the full copyright and license information, please view the LICENSE
+file that was distributed with this source code.
+EOF
+            ,
+            'location' => 'after_open',
+        ],
+    ])
+    ->setRiskyAllowed(true)
+    ->setLineEnding("\n")
+    ->setFinder(
+        PhpCsFixer\Finder::create()
+            ->in(__DIR__.'/src')
+            ->in(__DIR__.'/tests')
+            ->name('*.php')
+            ->ignoreDotFiles(true)
+            ->ignoreVCS(true)
+    )
+;

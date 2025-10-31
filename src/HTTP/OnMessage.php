@@ -39,7 +39,7 @@ class OnMessage
     public function __invoke(WorkermanTcpConnection $workermanTcpConnection, WorkermanRequest $workermanRequest): void
     {
         try {
-            if ($this->sfRequestHandler !== null) {
+            if (null !== $this->sfRequestHandler) {
                 $this->sfRequestHandler->setRequest(null);
                 $this->sfRequestHandler->setResponse(null);
             }
@@ -51,10 +51,10 @@ class OnMessage
             );
 
             // 在这里处理 terminal 逻辑
-            if ($this->kernel instanceof TerminableInterface && $this->sfRequestHandler !== null) {
+            if ($this->kernel instanceof TerminableInterface && null !== $this->sfRequestHandler) {
                 $request = $this->sfRequestHandler->getRequest();
                 $response = $this->sfRequestHandler->getResponse();
-                if ($request !== null && $response !== null) {
+                if (null !== $request && null !== $response) {
                     $this->kernel->terminate($request, $response);
                 }
             }

@@ -2,109 +2,22 @@
 
 namespace Tourze\WorkermanServerBundle\Tests\HTTP;
 
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
 use Symfony\Component\Console\Output\OutputInterface;
-use Tourze\WorkermanServerBundle\Exception\RequestProcessingException;
+use Tourze\WorkermanServerBundle\HTTP\OnMessage;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request as WorkermanRequest;
 
 /**
- * 完全测试用的 OnMessage 实现，绕过原始类的类型检查限制
+ * @internal
  */
-class TestOnMessage
-{
-    private $psrRequestFactory;
-    private $workermanResponseEmitter;
-    private $requestHandler;
-    private $output;
-
-    public function __construct(
-        $psrRequestFactory,
-        $workermanResponseEmitter,
-        RequestHandlerInterface $requestHandler,
-        ?OutputInterface $output = null
-    )
-    {
-        $this->psrRequestFactory = $psrRequestFactory;
-        $this->workermanResponseEmitter = $workermanResponseEmitter;
-        $this->requestHandler = $requestHandler;
-        $this->output = $output;
-    }
-
-    public function __invoke(TcpConnection $workermanTcpConnection, WorkermanRequest $workermanRequest): void
-    {
-        try {
-            $this->workermanResponseEmitter->emit(
-                $workermanRequest,
-                $this->requestHandler->handle(
-                    $this->psrRequestFactory->create($workermanTcpConnection, $workermanRequest)
-                ),
-                $workermanTcpConnection
-            );
-        } catch (\Throwable $exception) {
-            $this->output?->writeln(strval($exception));
-            // Worker::stopAll() 在测试中我们不实际调用，避免停止测试进程
-        }
-    }
-}
-
-/**
- * 测试用的请求工厂
- */
-class TestPsrRequestFactory
-{
-    private $psrRequest;
-    private $shouldThrowException = false;
-
-    public function __construct(?ServerRequestInterface $psrRequest = null, bool $shouldThrowException = false)
-    {
-        $this->psrRequest = $psrRequest;
-        $this->shouldThrowException = $shouldThrowException;
-    }
-
-    public function create($connection, $request): ServerRequestInterface
-    {
-        if ($this->shouldThrowException) {
-            throw new RequestProcessingException('Test exception');
-        }
-        return $this->psrRequest;
-    }
-}
-
-/**
- * 测试用的响应发送器
- */
-class TestWorkermanResponseEmitter
-{
-    private $testCase;
-    private $called = false;
-
-    public function __construct($testCase = null)
-    {
-        $this->testCase = $testCase;
-    }
-
-    public function emit($request, $response, $connection): void
-    {
-        $this->called = true;
-        if ($this->testCase) {
-            $this->testCase->assertSame($this->testCase->request, $request);
-            $this->testCase->assertSame($this->testCase->psrResponse, $response);
-            $this->testCase->assertSame($this->testCase->connection, $connection);
-        }
-    }
-
-    public function wasCalled(): bool
-    {
-        return $this->called;
-    }
-}
-
-class OnMessageTest extends TestCase
+#[CoversClass(OnMessage::class)]
+final class OnMessageTest extends TestCase
 {
     /**
      * @var RequestHandlerInterface&MockObject
@@ -121,10 +34,7 @@ class OnMessageTest extends TestCase
      */
     private $connection;
 
-    /**
-     * @var WorkermanRequest&MockObject
-     */
-    private $request;
+    private WorkermanRequest $request;
 
     /**
      * @var ServerRequestInterface&MockObject
@@ -138,11 +48,25 @@ class OnMessageTest extends TestCase
 
     protected function setUp(): void
     {
+        parent::setUp();
+
         // 模拟依赖
         $this->requestHandler = $this->createMock(RequestHandlerInterface::class);
         $this->output = $this->createMock(OutputInterface::class);
+
+        // 使用 TcpConnection 具体类 mock 是必要的，因为：
+        // 1. Workerman 的 TcpConnection 类没有对应的接口
+        // 2. 该类是 Workerman 框架的核心组件，无法替换为抽象接口
+        // 3. 测试需要验证与 Workerman 网络层的集成行为
         $this->connection = $this->createMock(TcpConnection::class);
-        $this->request = $this->createMock(WorkermanRequest::class);
+
+        // 创建一个简化的测试类来模拟 WorkermanRequest
+        // 这避免了 PHPUnit 12 对 method() 方法名的弃用警告
+        $this->request = new class('') extends WorkermanRequest {
+            // 这个匿名类继承 WorkermanRequest 但不需要实现任何特殊逻辑
+            // 因为测试中不会调用具体的 method() 方法，只需要一个可用的实例
+        };
+
         $this->psrRequest = $this->createMock(ServerRequestInterface::class);
         $this->psrResponse = $this->createMock(ResponseInterface::class);
     }
@@ -157,7 +81,8 @@ class OnMessageTest extends TestCase
         $this->requestHandler->expects($this->once())
             ->method('handle')
             ->with($this->psrRequest)
-            ->willReturn($this->psrResponse);
+            ->willReturn($this->psrResponse)
+        ;
 
         // 创建被测试对象（使用我们自己的实现）
         $onMessage = new TestOnMessage(
@@ -183,7 +108,8 @@ class OnMessageTest extends TestCase
         // 输出应记录异常信息
         $this->output->expects($this->once())
             ->method('writeln')
-            ->with($this->stringContains('Test exception'));
+            ->with(self::stringContains('Test exception'))
+        ;
 
         // 创建被测试对象（使用我们自己的实现）
         $onMessage = new TestOnMessage(

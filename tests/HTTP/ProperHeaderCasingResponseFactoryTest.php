@@ -2,10 +2,17 @@
 
 namespace Tourze\WorkermanServerBundle\Tests\HTTP;
 
+use Nyholm\Psr7\Factory\Psr17Factory;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
+use Symfony\Component\HttpFoundation\Response;
 use Tourze\WorkermanServerBundle\HTTP\ProperHeaderCasingResponseFactory;
 
-class ProperHeaderCasingResponseFactoryTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(ProperHeaderCasingResponseFactory::class)]
+final class ProperHeaderCasingResponseFactoryTest extends TestCase
 {
     /**
      * 测试缓存静态属性
@@ -19,6 +26,7 @@ class ProperHeaderCasingResponseFactoryTest extends TestCase
         $cache = $cacheProperty->getValue();
 
         // 验证缓存包含预期的头部转换规则
+        $this->assertIsArray($cache);
         $this->assertArrayHasKey('server', $cache);
         $this->assertEquals('Server', $cache['server']);
         $this->assertArrayHasKey('connection', $cache);
@@ -31,5 +39,43 @@ class ProperHeaderCasingResponseFactoryTest extends TestCase
         $this->assertEquals('Last-Modified', $cache['last-modified']);
         $this->assertArrayHasKey('transfer-encoding', $cache);
         $this->assertEquals('Transfer-Encoding', $cache['transfer-encoding']);
+    }
+
+    /**
+     * 测试 createResponse 方法
+     */
+    public function testCreateResponse(): void
+    {
+        $psr17Factory = new Psr17Factory();
+        $factory = new ProperHeaderCasingResponseFactory(
+            $psr17Factory,
+            $psr17Factory,
+            $psr17Factory,
+            $psr17Factory
+        );
+
+        // 创建一个带有小写头部的 Symfony Response
+        $symfonyResponse = new Response('Test content', 200, [
+            'content-type' => 'text/html',
+            'server' => 'nginx',
+            'connection' => 'keep-alive',
+        ]);
+
+        // 转换为 PSR Response
+        $psrResponse = $factory->createResponse($symfonyResponse);
+
+        // 验证头部大小写转换
+        $this->assertTrue($psrResponse->hasHeader('Content-Type'));
+        $this->assertEquals(['text/html'], $psrResponse->getHeader('Content-Type'));
+
+        $this->assertTrue($psrResponse->hasHeader('Server'));
+        $this->assertEquals(['nginx'], $psrResponse->getHeader('Server'));
+
+        $this->assertTrue($psrResponse->hasHeader('Connection'));
+        $this->assertEquals(['keep-alive'], $psrResponse->getHeader('Connection'));
+
+        // 验证响应体和状态码
+        $this->assertEquals('Test content', (string) $psrResponse->getBody());
+        $this->assertEquals(200, $psrResponse->getStatusCode());
     }
 }

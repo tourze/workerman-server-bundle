@@ -6,11 +6,16 @@ namespace Tourze\WorkermanServerBundle\Tests\RequestHandler;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;
+use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Server\RequestHandlerInterface;
 use Tourze\PSR15ChainRequestHandler\ChainRequestHandler;
 
-class ChainRequestHandlerTest extends TestCase
+/**
+ * @internal
+ */
+#[CoversClass(ChainRequestHandler::class)]
+final class ChainRequestHandlerTest extends TestCase
 {
     public function testEmptyHandlersReturns404(): void
     {
@@ -20,16 +25,14 @@ class ChainRequestHandlerTest extends TestCase
         $response = $chainHandler->handle($request);
 
         $this->assertEquals(404, $response->getStatusCode());
-        $this->assertEquals('No handlers available', (string)$response->getBody());
+        $this->assertEquals('No handlers available', (string) $response->getBody());
     }
 
     public function testFirstHandlerNon404Response(): void
     {
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(200, body: 'Success'));
 
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->expects($this->never())->method('handle');
 
@@ -39,16 +42,14 @@ class ChainRequestHandlerTest extends TestCase
         $response = $chainHandler->handle($request);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('Success', (string)$response->getBody());
+        $this->assertEquals('Success', (string) $response->getBody());
     }
 
     public function testSkips404AndUseSecondHandler(): void
     {
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(404));
 
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->method('handle')->willReturn(new Response(200, body: 'Found in second handler'));
 
@@ -58,16 +59,14 @@ class ChainRequestHandlerTest extends TestCase
         $response = $chainHandler->handle($request);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('Found in second handler', (string)$response->getBody());
+        $this->assertEquals('Found in second handler', (string) $response->getBody());
     }
 
     public function testAllHandlersReturn404(): void
     {
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(404));
 
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->method('handle')->willReturn(new Response(404));
 
@@ -77,16 +76,14 @@ class ChainRequestHandlerTest extends TestCase
         $response = $chainHandler->handle($request);
 
         $this->assertEquals(404, $response->getStatusCode());
-        $this->assertEquals('Not Found', (string)$response->getBody());
+        $this->assertEquals('Not Found', (string) $response->getBody());
     }
 
     public function testAddHandler(): void
     {
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler1 */
         $handler1 = $this->createMock(RequestHandlerInterface::class);
         $handler1->method('handle')->willReturn(new Response(404));
 
-        /** @var \PHPUnit\Framework\MockObject\MockObject&RequestHandlerInterface $handler2 */
         $handler2 = $this->createMock(RequestHandlerInterface::class);
         $handler2->method('handle')->willReturn(new Response(200, body: 'Added handler'));
 
@@ -97,6 +94,23 @@ class ChainRequestHandlerTest extends TestCase
         $response = $chainHandler->handle($request);
 
         $this->assertEquals(200, $response->getStatusCode());
-        $this->assertEquals('Added handler', (string)$response->getBody());
+        $this->assertEquals('Added handler', (string) $response->getBody());
+    }
+
+    /**
+     * 测试 handle 方法（为了满足 PHPStan 覆盖率要求）
+     */
+    public function testHandle(): void
+    {
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->method('handle')->willReturn(new Response(200, body: 'Handle success'));
+
+        $chainHandler = new ChainRequestHandler([$handler]);
+        $request = new ServerRequest('GET', '/test');
+
+        $response = $chainHandler->handle($request);
+
+        $this->assertEquals(200, $response->getStatusCode());
+        $this->assertEquals('Handle success', (string) $response->getBody());
     }
 }

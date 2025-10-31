@@ -16,13 +16,15 @@ final class WorkermanResponseEmitter
         $wkResponse = (new Response())
             ->withStatus($response->getStatusCode(), $response->getReasonPhrase())
             ->withHeaders($response->getHeaders())
-            ->withBody((string) $response->getBody());
+            ->withBody((string) $response->getBody())
+        ;
         $this->sendResponse($request, $wkResponse, $connection);
     }
 
     private function sendResponse(WorkermanRequest $request, mixed $buffer, WorkermanTcpConnection $connection): void
     {
-        if ('keep-alive' === strtolower($request->header('connection'))) {
+        $connectionHeader = $request->header('connection');
+        if ('keep-alive' === strtolower(is_string($connectionHeader) ? $connectionHeader : '')) {
             $connection->send($buffer);
 
             return;

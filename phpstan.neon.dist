@@ -1,0 +1,26 @@
+parameters:
+    level: 1
+    paths:
+        - src
+    tmpDir: var/cache/phpstan
+
+    # Symfony-specific configuration
+    symfony:
+        container_xml_path: var/cache/dev/App_KernelDevDebugContainer.xml
+        console_application_loader: var/cache/dev/App_KernelDevDebugContainer.xml
+
+    # Ignore some Symfony magic methods
+    universalObjectCratesClasses:
+        - Symfony\Component\DependencyInjection\ContainerInterface
+        - Symfony\Contracts\Service\ServiceSubscriberInterface
+
+    # Ignore tests
+    excludePaths:
+        - tests/*
+        - vendor/*
+
+    # Ignore untested public methods in test files
+    ignoreErrors:
+        - '#公共方法 .*::create\(\) 在测试类 .* 中没有对应的测试方法#'
+        - '#Public method .*::create\(\) in test class .* has no test method#'
+        - '#Public method .*::create\(\) in test class .* is not covered by test#'

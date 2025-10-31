@@ -3,48 +3,50 @@
 namespace Tourze\WorkermanServerBundle\Tests\Command;
 
 use League\MimeTypeDetection\MimeTypeDetector;
-use PHPUnit\Framework\MockObject\MockObject;
-use PHPUnit\Framework\TestCase;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Symfony\Component\Console\Attribute\AsCommand;
+use Symfony\Component\Console\Output\BufferedOutput;
+use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpKernel\KernelInterface;
+use Tourze\PHPUnitSymfonyKernelTest\AbstractCommandTestCase;
 use Tourze\WorkermanServerBundle\Command\WorkermanHttpCommand;
 
-class WorkermanHttpCommandTest extends TestCase
+/**
+ * @internal
+ *
+ * 测试 WorkermanHttpCommand 的基本配置和方法，不启动实际的 Workerman 进程
+ */
+#[CoversClass(WorkermanHttpCommand::class)]
+#[RunTestsInSeparateProcesses]
+final class WorkermanHttpCommandTest extends AbstractCommandTestCase
 {
-    /**
-     * @var KernelInterface&MockObject
-     */
-    private $kernel;
-
-    /**
-     * @var MimeTypeDetector&MockObject
-     */
-    private $mimeTypeDetector;
-
-    /**
-     * @var WorkermanHttpCommand
-     */
-    private $command;
-
-    protected function setUp(): void
+    protected function getCommandTester(): CommandTester
     {
-        $this->kernel = $this->createMock(KernelInterface::class);
-        $this->mimeTypeDetector = $this->createMock(MimeTypeDetector::class);
+        $command = self::getService(WorkermanHttpCommand::class);
+        $this->assertInstanceOf(WorkermanHttpCommand::class, $command);
 
-        $this->kernel->method('getProjectDir')
-            ->willReturn('/tmp/project');
+        return new CommandTester($command);
+    }
 
-        $this->kernel->method('getBuildDir')
-            ->willReturn('/tmp/project/var');
+    protected function onSetUp(): void
+    {
+        // Mock services that are required for command instantiation
+        $mockKernel = $this->createMock(KernelInterface::class);
+        $mockKernel->method('getProjectDir')->willReturn('/tmp');
+        $mockKernel->method('getBuildDir')->willReturn('/tmp/var/cache');
+        $mockKernel->method('isDebug')->willReturn(false);
 
-        $this->kernel->method('isDebug')
-            ->willReturn(true);
+        $mockMimeTypeDetector = $this->createMock(MimeTypeDetector::class);
 
-        $this->command = new WorkermanHttpCommand($this->kernel, $this->mimeTypeDetector);
+        self::getContainer()->set(KernelInterface::class, $mockKernel);
+        self::getContainer()->set('workerman-server.mime-detector', $mockMimeTypeDetector);
     }
 
     public function testCommandConfiguration(): void
     {
+        $command = self::getService(WorkermanHttpCommand::class);
+
         // 测试命令配置
         $reflection = new \ReflectionClass(WorkermanHttpCommand::class);
         $attributes = $reflection->getAttributes(AsCommand::class);
@@ -56,8 +58,8 @@ class WorkermanHttpCommandTest extends TestCase
         $this->assertEquals('workerman:http', $attribute->name);
         $this->assertEquals('启动Workerman-HTTP服务', $attribute->description);
 
-        // 检查命令选项/参数
-        $definition = $this->command->getDefinition();
+        // 检查命令参数
+        $definition = $command->getDefinition();
         $this->assertTrue($definition->hasArgument('start'));
         $this->assertTrue($definition->hasArgument('stop'));
         $this->assertTrue($definition->hasArgument('restart'));
@@ -66,24 +68,83 @@ class WorkermanHttpCommandTest extends TestCase
         $this->assertTrue($definition->hasArgument('connections'));
     }
 
-    /**
-     * 注意：由于 WorkermanHttpCommand 会尝试启动实际的 Worker 进程，
-     * 我们无法在单元测试中进行真正的执行测试。这里仅测试命令的配置。
-     * 完整的功能测试应该在集成测试环境中进行。
-     */
-    public function testCommandExecution(): void
+    public function testArgumentStart(): void
     {
-        // 使用反射来测试一些保护方法或属性，避免实际执行 Worker::runAll()
+        $command = self::getService(WorkermanHttpCommand::class);
+
+        $definition = $command->getDefinition();
+        $this->assertTrue($definition->hasArgument('start'));
+
+        $argument = $definition->getArgument('start');
+        $this->assertFalse($argument->isRequired());
+    }
+
+    public function testArgumentStop(): void
+    {
+        $command = self::getService(WorkermanHttpCommand::class);
+
+        $definition = $command->getDefinition();
+        $this->assertTrue($definition->hasArgument('stop'));
+
+        $argument = $definition->getArgument('stop');
+        $this->assertFalse($argument->isRequired());
+    }
+
+    public function testArgumentRestart(): void
+    {
+        $command = self::getService(WorkermanHttpCommand::class);
+
+        $definition = $command->getDefinition();
+        $this->assertTrue($definition->hasArgument('restart'));
+
+        $argument = $definition->getArgument('restart');
+        $this->assertFalse($argument->isRequired());
+    }
+
+    public function testArgumentStatus(): void
+    {
+        $command = self::getService(WorkermanHttpCommand::class);
+
+        $definition = $command->getDefinition();
+        $this->assertTrue($definition->hasArgument('status'));
+
+        $argument = $definition->getArgument('status');
+        $this->assertFalse($argument->isRequired());
+    }
+
+    public function testArgumentReload(): void
+    {
+        $command = self::getService(WorkermanHttpCommand::class);
+
+        $definition = $command->getDefinition();
+        $this->assertTrue($definition->hasArgument('reload'));
+
+        $argument = $definition->getArgument('reload');
+        $this->assertFalse($argument->isRequired());
+    }
+
+    public function testArgumentConnections(): void
+    {
+        $command = self::getService(WorkermanHttpCommand::class);
+
+        $definition = $command->getDefinition();
+        $this->assertTrue($definition->hasArgument('connections'));
+
+        $argument = $definition->getArgument('connections');
+        $this->assertFalse($argument->isRequired());
+    }
+
+    public function testResetServiceTimer(): void
+    {
+        $command = self::getService(WorkermanHttpCommand::class);
+        $output = new BufferedOutput();
+
+        // 使用反射访问 resetServiceTimer 方法
         $reflection = new \ReflectionClass(WorkermanHttpCommand::class);
+        $method = $reflection->getMethod('resetServiceTimer');
+        $method->setAccessible(true);
 
-        // 断言命令类有预期的方法
-        $this->assertTrue($reflection->hasMethod('runHttpServer'));
-        $this->assertTrue($reflection->hasMethod('resetServiceTimer'));
-        $this->assertTrue($reflection->hasMethod('createMessenger'));
-        $this->assertTrue($reflection->hasMethod('createFileMonitor'));
-        $this->assertTrue($reflection->hasMethod('execute'));
-
-        // 验证命令实例化成功
-        $this->assertInstanceOf(WorkermanHttpCommand::class, $this->command);
+        // 调用方法，确保不抛出异常
+        $this->assertNull($method->invoke($command, $output));
     }
 }
