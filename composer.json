@@ -24,7 +24,7 @@
     "symfony/psr-http-message-bridge": "^7.3",
     "symfony/service-contracts": "^3.6",
     "symfony/yaml": "^7.3",
-    "tourze/backtrace-helper": "0.1.*",
+    "tourze/backtrace-helper": "1.*",
     "tourze/bundle-dependency": "1.*",
     "tourze/psr15-chain-request-handler": "0.0.*",
     "tourze/psr15-symfony-request-request-handler": "0.0.*",
