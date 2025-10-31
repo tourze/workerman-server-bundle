@@ -21,6 +21,7 @@
     "symfony/http-foundation": "^7.3",
     "symfony/http-kernel": "^7.3",
     "symfony/process": "^7.3",
+    "symfony/property-access": "^7.3",
     "symfony/psr-http-message-bridge": "^7.3",
     "symfony/service-contracts": "^3.6",
     "symfony/yaml": "^7.3",
@@ -29,7 +30,7 @@
     "tourze/psr15-chain-request-handler": "0.0.*",
     "tourze/psr15-symfony-request-request-handler": "0.0.*",
     "tourze/symfony-dependency-service-loader": "1.*",
-    "tourze/symfony-runtime-context-bundle": "0.0.*",
+    "tourze/symfony-runtime-context-bundle": "1.0.*",
     "tourze/workerman-file-monitor": "0.0.*",
     "tourze/workerman-process-worker": "0.1.*",
     "tourze/workerman-psr-logger": "0.0.*",
@@ -42,7 +43,7 @@
     "phpstan/phpstan": "^2.1",
     "phpunit/phpunit": "^11.5",
     "tourze/phpunit-base": "1.*",
-    "tourze/phpunit-symfony-kernel-test": "1.*",
+    "tourze/phpunit-symfony-kernel-test": "1.0.*",
     "tourze/phpunit-symfony-unit-test": "1.*"
   },
   "autoload": {
