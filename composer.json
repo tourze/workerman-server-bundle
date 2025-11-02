@@ -34,7 +34,7 @@
     "tourze/workerman-file-monitor": "0.0.*",
     "tourze/workerman-process-worker": "0.1.*",
     "tourze/workerman-psr-logger": "0.0.*",
-    "tourze/workerman-runtime-context-bundle": "0.0.*",
+    "tourze/workerman-runtime-context-bundle": "1.0.*",
     "workerman/coroutine": "^1.1",
     "workerman/psr7": "^2.0",
     "workerman/workerman": "^5.1"
