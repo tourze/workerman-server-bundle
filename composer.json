@@ -32,7 +32,7 @@
     "tourze/symfony-dependency-service-loader": "1.0.*",
     "tourze/symfony-runtime-context-bundle": "1.0.*",
     "tourze/workerman-file-monitor": "0.0.*",
-    "tourze/workerman-process-worker": "0.1.*",
+    "tourze/workerman-process-worker": "0.2.*",
     "tourze/workerman-psr-logger": "0.0.*",
     "tourze/workerman-runtime-context-bundle": "1.0.*",
     "workerman/coroutine": "^1.1",
