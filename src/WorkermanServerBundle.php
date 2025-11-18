@@ -4,17 +4,11 @@ namespace Tourze\WorkermanServerBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Tourze\BacktraceHelper\Backtrace;
-use Tourze\BundleDependency\BundleDependencyInterface;
 use Tourze\PSR15SymfonyRequestHandler\SymfonyRequestHandler;
 use Tourze\WorkermanServerBundle\HTTP\OnMessage;
 
-class WorkermanServerBundle extends Bundle implements BundleDependencyInterface
+class WorkermanServerBundle extends Bundle
 {
-    public static function getBundleDependencies(): array
-    {
-        return [];
-    }
-
     public function boot(): void
     {
         parent::boot();
