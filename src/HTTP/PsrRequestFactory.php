@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\HTTP;
 
 use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;

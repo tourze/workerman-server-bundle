@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\Tests\RequestHandler;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\RequestHandler;
 
 use Nyholm\Psr7\Response;
 use Nyholm\Psr7\ServerRequest;

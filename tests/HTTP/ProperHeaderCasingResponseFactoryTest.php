@@ -1,12 +1,12 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\Tests\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\HTTP;
 
 use Nyholm\Psr7\Factory\Psr17Factory;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\TestCase;
 use Symfony\Component\HttpFoundation\Response;
-use Tourze\WorkermanServerBundle\HTTP\ProperHeaderCasingResponseFactory;
+use Mickeywaugh\WorkermanServerBundle\HTTP\ProperHeaderCasingResponseFactory;
 
 /**
  * @internal

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\HTTP;
 
 use Psr\Http\Message\ResponseInterface;
 use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;

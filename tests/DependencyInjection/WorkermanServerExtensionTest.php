@@ -1,10 +1,10 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\Tests\DependencyInjection;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\DependencyInjection;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\PHPUnitSymfonyUnitTest\AbstractDependencyInjectionExtensionTestCase;
-use Tourze\WorkermanServerBundle\DependencyInjection\WorkermanServerExtension;
+use Mickeywaugh\WorkermanServerBundle\DependencyInjection\WorkermanServerExtension;
 
 /**
  * @internal

@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\Tests\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\HTTP;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
@@ -11,7 +11,7 @@ use Psr\Http\Message\ServerRequestFactoryInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Message\StreamFactoryInterface;
 use Psr\Http\Message\UploadedFileFactoryInterface;
-use Tourze\WorkermanServerBundle\HTTP\PsrRequestFactory;
+use Mickeywaugh\WorkermanServerBundle\HTTP\PsrRequestFactory;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Request as WorkermanRequest;
 

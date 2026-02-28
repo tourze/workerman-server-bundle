@@ -1,6 +1,6 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\Command;
+namespace Mickeywaugh\WorkermanServerBundle\Command;
 
 use Fidry\CpuCoreCounter\CpuCoreCounter;
 use Fidry\CpuCoreCounter\Finder\DummyCpuCoreFinder;
@@ -12,6 +12,7 @@ use Symfony\Bridge\PsrHttpMessage\Factory\PsrHttpFactory;
 use Symfony\Component\Console\Attribute\AsCommand;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
+use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autoconfigure;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
@@ -21,7 +22,7 @@ use Symfony\Component\HttpKernel\TerminableInterface;
 use Symfony\Component\Process\PhpExecutableFinder;
 use Symfony\Contracts\Service\ResetInterface;
 use Tourze\Workerman\ProcessWorker\ProcessWorker;
-use Tourze\WorkermanServerBundle\Exception\WorkermanServerException;
+use Mickeywaugh\WorkermanServerBundle\Exception\WorkermanServerException;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
 use Workerman\Protocols\Http\Request;
@@ -73,6 +74,9 @@ final class WorkermanHttpCommand extends Command
             ->addArgument('status')
             ->addArgument('reload')
             ->addArgument('connections')
+            ->addOption('host', null, InputOption::VALUE_OPTIONAL, 'Host to listen on', '127.0.0.1')
+            ->addOption('port', null, InputOption::VALUE_OPTIONAL, 'Port to listen on', 8080)
+            ->addOption('daemon', 'd', InputOption::VALUE_NONE, 'Run in daemon mode')
         ;
     }
 
@@ -81,10 +85,16 @@ final class WorkermanHttpCommand extends Command
      */
     protected function runHttpServer(InputInterface $input, OutputInterface $output): void
     {
-        $worker = new Worker('http://127.0.0.1:8080');
+        $host = $_ENV['WORKERMAN_SERVER_HOST'] ?? $input->getOption('host');
+        $port = (int) $_ENV['WORKERMAN_SERVER_PORT'] ?? $input->getOption('port');
+        $isDaemon = $input->getOption('daemon');
+        $worker = new Worker(sprintf('http://%s:%d', $host, $port));
         $worker->name = 'symfony-http-server';
-        $envCount = $_ENV['WORKERMAN_HTTP_SERVER_PROCESS_COUNT'] ?? null;
+        $envCount = $_ENV['WORKERMAN_SERVER_PROCESS_COUNT'] ?? null;
         $worker->count = is_numeric($envCount) ? (int) $envCount : max(2, (int) ($this->coreCounter->getCount() / 2));
+        if ($isDaemon) {
+            Worker::$daemonize = true;
+        }
         $worker->onWorkerStart = function () use ($output): void {
             $this->resetServiceTimer($output);
             //            if ($this->kernel->isDebug()) {
@@ -281,9 +291,6 @@ final class WorkermanHttpCommand extends Command
         $worker->name = 'AsyncMessenger';
         $worker->onProcessStart = function (): void {
             $_ENV['WORKER_NAME'] = 'async-messenger';
-            //            if ($this->kernel->isDebug()) {
-            //                $this->createFileMonitor();
-            //            }
         };
     }
 

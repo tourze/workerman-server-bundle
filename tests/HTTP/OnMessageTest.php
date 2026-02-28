@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\Tests\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\HTTP;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\RunTestsInSeparateProcesses;
 use Tourze\PHPUnitSymfonyKernelTest\AbstractIntegrationTestCase;
-use Tourze\WorkermanServerBundle\HTTP\OnMessage;
+use Mickeywaugh\WorkermanServerBundle\HTTP\OnMessage;
 
 /**
  * OnMessage 测试类

@@ -1,6 +1,6 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\Tests\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\HTTP;
 
 use Nyholm\Psr7\ServerRequest;
 use PHPUnit\Framework\Attributes\CoversClass;

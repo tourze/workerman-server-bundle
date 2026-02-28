@@ -1,6 +1,6 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\Tests\Command;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\Command;
 
 use League\MimeTypeDetection\MimeTypeDetector;
 use PHPUnit\Framework\Attributes\CoversClass;
@@ -10,7 +10,7 @@ use Symfony\Component\Console\Output\BufferedOutput;
 use Symfony\Component\Console\Tester\CommandTester;
 use Symfony\Component\HttpKernel\KernelInterface;
 use Tourze\PHPUnitSymfonyKernelTest\AbstractCommandTestCase;
-use Tourze\WorkermanServerBundle\Command\WorkermanHttpCommand;
+use Mickeywaugh\WorkermanServerBundle\Command\WorkermanHttpCommand;
 
 /**
  * @internal

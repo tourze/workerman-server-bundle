@@ -1,11 +1,11 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle;
+namespace Mickeywaugh\WorkermanServerBundle;
 
 use Symfony\Component\HttpKernel\Bundle\Bundle;
 use Tourze\BacktraceHelper\Backtrace;
 use Tourze\PSR15SymfonyRequestHandler\SymfonyRequestHandler;
-use Tourze\WorkermanServerBundle\HTTP\OnMessage;
+use Mickeywaugh\WorkermanServerBundle\HTTP\OnMessage;
 
 class WorkermanServerBundle extends Bundle
 {

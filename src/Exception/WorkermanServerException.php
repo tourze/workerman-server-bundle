@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\Exception;
+namespace Mickeywaugh\WorkermanServerBundle\Exception;
 
 final class WorkermanServerException extends \Exception
 {

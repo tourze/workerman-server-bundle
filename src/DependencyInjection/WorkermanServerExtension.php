@@ -1,6 +1,6 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\DependencyInjection;
+namespace Mickeywaugh\WorkermanServerBundle\DependencyInjection;
 
 use Tourze\SymfonyDependencyServiceLoader\AutoExtension;
 

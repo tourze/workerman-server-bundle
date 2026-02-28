@@ -1,10 +1,10 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\Tests\Exception;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\Exception;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use Tourze\PHPUnitBase\AbstractExceptionTestCase;
-use Tourze\WorkermanServerBundle\Exception\RequestProcessingException;
+use Mickeywaugh\WorkermanServerBundle\Exception\RequestProcessingException;
 
 /**
  * @internal

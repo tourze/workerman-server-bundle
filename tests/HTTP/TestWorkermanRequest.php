@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Tourze\WorkermanServerBundle\Tests\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\HTTP;
 
 use Workerman\Protocols\Http\Request as WorkermanRequest;
 

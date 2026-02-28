@@ -1,13 +1,13 @@
 <?php
 
-namespace Tourze\WorkermanServerBundle\Tests\HTTP;
+namespace Mickeywaugh\WorkermanServerBundle\Tests\HTTP;
 
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\StreamInterface;
-use Tourze\WorkermanServerBundle\HTTP\WorkermanResponseEmitter;
+use Mickeywaugh\WorkermanServerBundle\HTTP\WorkermanResponseEmitter;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http\Response as WorkermanResponse;
 

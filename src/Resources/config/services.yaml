@@ -4,9 +4,9 @@ services:
     autowire: true      # Automatically injects dependencies in your services.
     autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
 
-  Tourze\WorkermanServerBundle\Command\:
+  Mickeywaugh\WorkermanServerBundle\Command\:
     resource: '../../Command/'
-  Tourze\WorkermanServerBundle\HTTP\:
+  Mickeywaugh\WorkermanServerBundle\HTTP\:
     resource: '../../HTTP/'
 
   # MIME detector service
